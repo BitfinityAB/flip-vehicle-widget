@@ -47,6 +47,9 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/vehicle_widget_info" />
+            <meta-data
+                android:name="com.samsung.android.appwidget.provider"
+                android:resource="@xml/samsung_vehicle_widget_info" />
         </receiver>
 
         <receiver
