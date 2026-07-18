@@ -1,7 +1,8 @@
 # Signing Proxy Setup
 
-Tesla's Fleet API requires vehicle commands to be Ed25519-signed. This
-stack runs Tesla's official `tesla-http-proxy` for that, plus a
+Tesla's Fleet API requires vehicle commands to be signed with a NIST P-256
+(prime256v1/secp256r1) key. This stack runs Tesla's official `tesla-http-proxy`
+for that, plus a
 Caddy reverse proxy in front that gets a free Let's Encrypt certificate
 automatically and routes both the proxy API and the `.well-known` files
 your domain must serve, all on one HTTPS domain.
@@ -31,18 +32,21 @@ actually talks to, with a real Let's Encrypt cert for your domain.
    up front — Caddy obtains one automatically on first request, as long
    as ports 80 and 443 are reachable from the internet.
 
-3. **Generate the Ed25519 signing keypair** (on the VPS, or generate
-   locally and copy up — never let this leave your control):
+3. **Generate the P-256 command-signing keypair** (on the VPS, or generate
+   locally and copy up — never let this leave your control). This must be
+   NIST P-256 — `tesla-http-proxy` rejects other key types (including
+   Ed25519) with `invalid private key: only elliptic curve keys supported`:
    ```bash
-   openssl genpkey -algorithm ed25519 -out private-key/signing-key.pem
-   openssl pkey -in private-key/signing-key.pem -pubout -out public-key/com.tesla.3p.public-key.pem
+   openssl ecparam -name prime256v1 -genkey -noout -out private-key/signing-key.pem
+   openssl ec -in private-key/signing-key.pem -pubout -out public-key/com.tesla.3p.public-key.pem
    ```
 
 4. **Generate the internal self-signed TLS cert** for `tesla-http-proxy`
    (this is never exposed publicly — only Caddy talks to it, over the
-   Docker-internal network):
+   Docker-internal network). This must also be an EC key — `-tls-key`
+   rejects RSA the same way:
    ```bash
-   openssl req -x509 -newkey rsa:2048 -nodes -days 3650 \
+   openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 3650 \
      -keyout private-key/internal-tls-key.pem \
      -out private-key/internal-tls-cert.pem \
      -subj "/CN=tesla-http-proxy-internal"
@@ -98,9 +102,14 @@ error) means the proxy is reachable and forwarding correctly.
 ## Deploying via GitHub Actions
 
 `.github/workflows/deploy-proxy.yml` rsyncs `proxy/` to the VPS and
-restarts the stack on every push to `main` that touches `proxy/**`. It
-never touches `proxy/private-key/` or `proxy/.env` on the VPS — those
-only ever exist there, generated once in steps 3–4 and 6 above.
+force-recreates the stack on every push to `main` that touches `proxy/**`
+(force-recreate, not just `up -d`, because a config-file-only change like
+a Caddyfile edit doesn't otherwise trigger a restart). It never touches
+`proxy/private-key/`, `proxy/public-key/*.pem`, or `proxy/.env` on the
+VPS — those only ever exist there, generated once in steps 3–4 and 6
+above (the public key is *derived from* the VPS-only private key, so it's
+VPS-only too, even though the directory itself is versioned via a
+`.gitkeep`).
 
 Required repository secrets (Settings → Secrets and variables → Actions):
 
