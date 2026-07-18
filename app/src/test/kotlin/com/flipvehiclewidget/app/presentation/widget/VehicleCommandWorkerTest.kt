@@ -120,4 +120,33 @@ class VehicleCommandWorkerTest {
         val view = shadowManager.getViewFor(appWidgetId)
         assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.text_not_connected).visibility)
     }
+
+    @Test
+    fun `auth failure nested two levels deep still clears token and disconnects`() = runTest {
+        // Simulates kotlinx.coroutines' stack-trace recovery inserting an extra IOException
+        // wrapper when AuthInterceptor's exception crosses a coroutine suspension boundary
+        // on a different thread than where it was thrown (confirmed real behavior, Task 18).
+        val innerFailure = java.io.IOException("token refresh failed", AuthorizationException.GeneralErrors.NETWORK_ERROR)
+        val recoveredFailure = java.io.IOException(innerFailure.message, innerFailure)
+        val repository = FakeVehicleRepository(Result.failure(recoveredFailure))
+        val useCases: Map<VehicleCommand, VehicleCommandUseCase> =
+            mapOf(VehicleCommand.TOGGLE_TRUNK to ToggleTrunkUseCase(repository))
+        val tokenManager = mockk<TokenManager>(relaxed = true)
+
+        val worker = TestListenableWorkerBuilder<VehicleCommandWorker>(context)
+            .setInputData(
+                workDataOf(
+                    VehicleCommandWorker.KEY_COMMAND to VehicleCommand.TOGGLE_TRUNK.name,
+                    VehicleCommandWorker.KEY_APPWIDGET_ID to appWidgetId,
+                ),
+            )
+            .setWorkerFactory(workerFactoryFor(repository, useCases, tokenManager))
+            .build()
+
+        val result = worker.doWork()
+
+        assert(result is ListenableWorker.Result.Failure)
+        val view = shadowManager.getViewFor(appWidgetId)
+        assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.text_not_connected).visibility)
+    }
 }

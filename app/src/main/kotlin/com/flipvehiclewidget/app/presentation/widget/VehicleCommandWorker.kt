@@ -51,9 +51,13 @@ class VehicleCommandWorker @AssistedInject constructor(
     }
 
     private fun handleFailure(appWidgetId: Int, command: VehicleCommand, error: Throwable): Result {
-        // AuthInterceptor (Task 5) wraps token-fetch failures as IOException(cause = AuthorizationException)
-        // rather than letting them propagate as their original type, so check the cause here.
-        if (error.cause is AuthorizationException) {
+        // AuthInterceptor (Task 5) wraps token-fetch failures as IOException(cause = AuthorizationException),
+        // but kotlinx.coroutines' stack-trace recovery can insert an additional IOException wrapper when
+        // that exception crosses a coroutine suspension boundary on a different thread than where it was
+        // thrown (confirmed via Task 18's integration test) -- so walk the whole cause chain instead of
+        // checking one level.
+        val isAuthFailure = generateSequence(error) { it.cause }.any { it is AuthorizationException }
+        if (isAuthFailure) {
             tokenManager.clear()
             renderDisconnected(appWidgetId)
             return Result.failure()
