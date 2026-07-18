@@ -5,7 +5,7 @@
       "namespace": "android_app",
       "package_name": "com.flipvehiclewidget.app",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_YOUR_APP_SIGNING_CERT_SHA256_FINGERPRINT"
+        "32:97:16:2A:29:B2:46:3E:F3:37:1B:7E:F3:4F:03:56:34:5E:89:B1:97:65:4D:60:77:7F:0C:3C:3B:54:5A:35"
       ]
     }
   }
