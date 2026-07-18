@@ -1,9 +1,12 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -17,7 +20,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        val localProperties = java.util.Properties().apply {
+        val localProperties = Properties().apply {
             val file = rootProject.file("local.properties")
             if (file.exists()) file.inputStream().use { load(it) }
         }
@@ -26,16 +29,14 @@ android {
         buildConfigField("String", "OAUTH_REDIRECT_URI", "\"${localProperties.getProperty("oauth.redirectUri", "https://example.invalid/oauth/callback")}\"")
         buildConfigField("String", "VEHICLE_BT_NAME", "\"${localProperties.getProperty("vehicle.btName", "")}\"")
 
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.flipvehiclewidget.app"
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildFeatures {
         buildConfig = true
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
     }
 
     buildTypes {
