@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="@dimen/widget_padding">
+
+    <TextView
+        android:id="@+id/text_not_connected"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:textColor="#888888"
+        android:text="@string/widget_not_connected"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/connected_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <Button
+            android:id="@+id/button_toggle_trunk"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:textSize="@dimen/widget_button_text_size"
+            android:text="@string/widget_toggle_trunk" />
+
+        <Button
+            android:id="@+id/button_toggle_frunk"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:textSize="@dimen/widget_button_text_size"
+            android:text="@string/widget_toggle_frunk" />
+
+        <Button
+            android:id="@+id/button_toggle_climate"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:textSize="@dimen/widget_button_text_size"
+            android:text="@string/widget_toggle_climate" />
+
+        <Button
+            android:id="@+id/button_toggle_locks"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:textSize="@dimen/widget_button_text_size"
+            android:text="@string/widget_toggle_locks" />
+
+    </LinearLayout>
+
+</LinearLayout>
