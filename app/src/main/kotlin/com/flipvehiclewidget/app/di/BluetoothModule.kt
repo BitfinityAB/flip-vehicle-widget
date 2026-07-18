@@ -1,9 +1,11 @@
 package com.flipvehiclewidget.app.di
 
+import com.flipvehiclewidget.app.BuildConfig
 import com.flipvehiclewidget.app.data.bluetooth.AndroidBluetoothConnectivityGateway
 import com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectivityGateway
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -16,4 +18,10 @@ abstract class BluetoothModule {
     abstract fun bindBluetoothConnectivityGateway(
         impl: AndroidBluetoothConnectivityGateway,
     ): BluetoothConnectivityGateway
+
+    companion object {
+        @Provides
+        @VehicleBluetoothName
+        fun provideVehicleBluetoothName(): String = BuildConfig.VEHICLE_BT_NAME
+    }
 }
