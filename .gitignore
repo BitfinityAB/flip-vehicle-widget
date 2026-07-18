@@ -33,3 +33,6 @@ local.properties
 # Gradle
 .gradle/
 build/
+
+# Signing proxy secrets (never commit)
+proxy/private-key/

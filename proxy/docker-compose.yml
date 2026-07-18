@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  tesla-http-proxy:
+    image: ghcr.io/teslamotors/vehicle-command/tesla-http-proxy:latest
+    restart: unless-stopped
+    ports:
+      - "4443:443"
+    volumes:
+      - ./private-key/tls-key.pem:/etc/tesla/tls-key.pem:ro
+      - ./private-key/tls-cert.pem:/etc/tesla/tls-cert.pem:ro
+      - ./private-key/signing-key.pem:/etc/tesla/signing-key.pem:ro
+    command:
+      - "-tls-key=/etc/tesla/tls-key.pem"
+      - "-cert=/etc/tesla/tls-cert.pem"
+      - "-key-file=/etc/tesla/signing-key.pem"
+      - "-port=443"
+
+  public-key-host:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public-key:/usr/share/nginx/html/.well-known/appspecific:ro
+      - ./well-known:/usr/share/nginx/html/.well-known:ro

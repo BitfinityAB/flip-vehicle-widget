@@ -1,0 +1,5 @@
+Placeholder to keep this directory in git. The real
+com.tesla.3p.public-key.pem file is generated during proxy setup
+(see README.md) and is NOT committed — it must be served over HTTPS
+at /.well-known/appspecific/com.tesla.3p.public-key.pem but the key
+material itself can be regenerated, so there's no need to version it.
