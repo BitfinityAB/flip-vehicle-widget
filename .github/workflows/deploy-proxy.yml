@@ -21,19 +21,28 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "${{ secrets.HETZNER_HOST }}" >> ~/.ssh/known_hosts
 
-      # --delete keeps the VPS copy in sync with this repo, but private-key/
-      # only ever exists on the VPS (gitignored, never in this checkout) --
-      # excluding it here is what stops --delete from wiping the real keys.
+      # --delete keeps the VPS copy in sync with this repo. private-key/ only
+      # ever exists on the VPS (gitignored, never in this checkout), and the
+      # actual generated public-key/*.pem is likewise VPS-only (only a
+      # .gitkeep placeholder lives in the repo, since the public key is
+      # derived from the VPS-only private key) -- excluding both is what
+      # stops --delete from wiping real, non-reproducible-from-git state.
       - name: Sync proxy config to VPS
         run: |
           rsync -az --delete \
             --exclude 'private-key/' \
+            --exclude 'public-key/*.pem' \
             --exclude '.env' \
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             proxy/ "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/opt/flip-vehicle-widget-proxy/"
 
+      # --force-recreate: plain `up -d` only recreates containers whose
+      # *service definition* changed, not ones whose bind-mounted config
+      # file (e.g. Caddyfile) changed content -- without this, a config-only
+      # change silently keeps running with the old config until something
+      # else forces a restart.
       - name: Restart stack
         run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
             "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
-            "cd /opt/flip-vehicle-widget-proxy && docker compose pull && docker compose up -d --remove-orphans"
+            "cd /opt/flip-vehicle-widget-proxy && docker compose pull && docker compose up -d --force-recreate --remove-orphans"
