@@ -1,6 +1,7 @@
 {$PROXY_DOMAIN} {
 	@wellknown path /.well-known/*
 	handle @wellknown {
+		uri strip_prefix /.well-known
 		root * /srv/well-known
 		file_server
 	}
