@@ -17,7 +17,9 @@ services:
       - tesla-http-proxy
 
   tesla-http-proxy:
-    image: ghcr.io/teslamotors/vehicle-command/tesla-http-proxy:latest
+    image: tesla/vehicle-command:latest
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped
     expose:
       - "443"
@@ -29,6 +31,7 @@ services:
       - "-tls-key=/etc/tesla/tls-key.pem"
       - "-cert=/etc/tesla/tls-cert.pem"
       - "-key-file=/etc/tesla/signing-key.pem"
+      - "-host=0.0.0.0"
       - "-port=443"
 
 volumes:
