@@ -9,7 +9,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./well-known:/srv/well-known:ro
+      - ./well-known:/srv/well-known
       - ./public-key:/srv/well-known/appspecific:ro
       - caddy_data:/data
       - caddy_config:/config
