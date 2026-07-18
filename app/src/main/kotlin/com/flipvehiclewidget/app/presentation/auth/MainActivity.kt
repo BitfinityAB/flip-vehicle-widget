@@ -36,9 +36,16 @@ import javax.inject.Inject
 object OAuthConfig {
     const val SCOPE = "openid offline_access vehicle_device_data vehicle_cmds"
 
+    // Token exchange/refresh is routed through our own proxy (oauth-relay), not Tesla's real
+    // token endpoint directly: Tesla's Fleet API requires a client_secret on every token
+    // request, which must never be embedded in this app (extractable from the APK). The
+    // relay holds the secret server-side and forwards to Tesla's actual endpoint
+    // (https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token). The authorize endpoint
+    // itself stays on Tesla's real domain since that step is just a browser redirect with
+    // no secret involved.
     private val serviceConfiguration = AuthorizationServiceConfiguration(
         Uri.parse("https://auth.tesla.com/oauth2/v3/authorize"),
-        Uri.parse("https://auth.tesla.com/oauth2/v3/token"),
+        Uri.parse(BuildConfig.PROXY_BASE_URL + "oauth/token"),
     )
 
     fun buildAuthorizationRequest(): AuthorizationRequest =

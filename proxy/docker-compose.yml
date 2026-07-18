@@ -15,6 +15,22 @@ services:
       - caddy_config:/config
     depends_on:
       - tesla-http-proxy
+      - oauth-relay
+
+  # Holds TESLA_CLIENT_SECRET server-side and performs the OAuth token
+  # exchange/refresh on the app's behalf -- Tesla's Fleet API requires a
+  # client_secret on every token request, which must never be embedded in
+  # the Android app itself (extractable from the APK). See oauth-relay/server.py.
+  oauth-relay:
+    image: python:3.12-alpine
+    restart: unless-stopped
+    environment:
+      - TESLA_CLIENT_SECRET=${TESLA_CLIENT_SECRET:?set TESLA_CLIENT_SECRET in proxy/.env}
+    volumes:
+      - ./oauth-relay/server.py:/app/server.py:ro
+    command: ["python3", "/app/server.py"]
+    expose:
+      - "8090"
 
   tesla-http-proxy:
     image: tesla/vehicle-command:latest

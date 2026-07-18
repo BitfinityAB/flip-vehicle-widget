@@ -11,6 +11,11 @@
 		respond "You can close this tab and return to the app." 200
 	}
 
+	@oauthtoken path /oauth/token
+	handle @oauthtoken {
+		reverse_proxy oauth-relay:8090
+	}
+
 	handle {
 		reverse_proxy tesla-http-proxy:443 {
 			transport http {
