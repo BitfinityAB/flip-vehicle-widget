@@ -108,9 +108,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun ConnectScreen(isAuthenticated: Boolean, onConnectClick: () -> Unit) {
     Column(modifier = Modifier.padding(24.dp)) {
-        Text(if (isAuthenticated) "Connected to Tesla" else "Not connected")
+        Text(if (isAuthenticated) "Connected to vehicle" else "Not connected")
         Button(onClick = onConnectClick, modifier = Modifier.padding(top = 16.dp)) {
-            Text(if (isAuthenticated) "Reconnect Tesla" else "Connect Tesla")
+            Text(if (isAuthenticated) "Reconnect vehicle" else "Connect vehicle")
         }
     }
 }
