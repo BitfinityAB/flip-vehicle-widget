@@ -34,6 +34,9 @@ local.properties
 .gradle/
 build/
 
+# Android Studio / IntelliJ
+.idea/
+
 # Signing proxy secrets (never commit)
 proxy/private-key/
 proxy/.env
