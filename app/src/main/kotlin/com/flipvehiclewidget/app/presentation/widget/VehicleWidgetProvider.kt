@@ -7,13 +7,34 @@ import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
 import com.flipvehiclewidget.app.R
+import com.flipvehiclewidget.app.domain.entity.ConnectionState
 import com.flipvehiclewidget.app.domain.entity.VehicleCommand
+import com.flipvehiclewidget.app.domain.usecase.CheckBluetoothConnectionUseCase
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class VehicleWidgetProvider : AppWidgetProvider() {
 
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface WidgetEntryPoint {
+        fun checkBluetoothConnectionUseCase(): CheckBluetoothConnectionUseCase
+    }
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        for (appWidgetId in appWidgetIds) {
-            render(context, appWidgetManager, appWidgetId, WidgetState.Disconnected)
+        val pendingResult: PendingResult? = goAsync()
+        val useCase = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
+            .checkBluetoothConnectionUseCase()
+
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            renderAll(context, appWidgetManager, appWidgetIds, useCase)
+            pendingResult?.finish()
         }
     }
 
@@ -24,6 +45,24 @@ class VehicleWidgetProvider : AppWidgetProvider() {
             VehicleCommand.TOGGLE_CLIMATE to R.id.button_toggle_climate,
             VehicleCommand.TOGGLE_LOCKS to R.id.button_toggle_locks,
         )
+
+        internal suspend fun renderAll(
+            context: Context,
+            appWidgetManager: AppWidgetManager,
+            appWidgetIds: IntArray,
+            checkBluetoothConnectionUseCase: CheckBluetoothConnectionUseCase,
+        ) {
+            val connectionState = runCatching { checkBluetoothConnectionUseCase() }
+                .getOrDefault(ConnectionState.DISCONNECTED)
+            val state = if (connectionState == ConnectionState.CONNECTED) {
+                WidgetState.Connected()
+            } else {
+                WidgetState.Disconnected
+            }
+            for (appWidgetId in appWidgetIds) {
+                render(context, appWidgetManager, appWidgetId, state)
+            }
+        }
 
         fun render(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, state: WidgetState) {
             val views = RemoteViews(context.packageName, R.layout.widget_layout)

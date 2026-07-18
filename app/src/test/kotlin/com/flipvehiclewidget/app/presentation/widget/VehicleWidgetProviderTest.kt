@@ -52,4 +52,38 @@ class VehicleWidgetProviderTest {
         val view = shadowManager.getViewFor(appWidgetId)
         assertEquals(false, view.findViewById<android.widget.Button>(R.id.button_toggle_trunk).isEnabled)
     }
+
+    @Test
+    fun `renderAll shows connected state when bluetooth check reports connected`() = kotlinx.coroutines.test.runTest {
+        val useCase = com.flipvehiclewidget.app.domain.usecase.CheckBluetoothConnectionUseCase(
+            com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectionManager(
+                gateway = object : com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectivityGateway {
+                    override suspend fun connectedDeviceNames(): List<String> = listOf("Model 3")
+                },
+                vehicleBluetoothName = "Model 3",
+            ),
+        )
+
+        VehicleWidgetProvider.renderAll(context, appWidgetManager, intArrayOf(appWidgetId), useCase)
+
+        val view = shadowManager.getViewFor(appWidgetId)
+        assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.connected_container).visibility)
+    }
+
+    @Test
+    fun `renderAll shows disconnected state when bluetooth check reports disconnected`() = kotlinx.coroutines.test.runTest {
+        val useCase = com.flipvehiclewidget.app.domain.usecase.CheckBluetoothConnectionUseCase(
+            com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectionManager(
+                gateway = object : com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectivityGateway {
+                    override suspend fun connectedDeviceNames(): List<String> = emptyList()
+                },
+                vehicleBluetoothName = "Model 3",
+            ),
+        )
+
+        VehicleWidgetProvider.renderAll(context, appWidgetManager, intArrayOf(appWidgetId), useCase)
+
+        val view = shadowManager.getViewFor(appWidgetId)
+        assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.text_not_connected).visibility)
+    }
 }
