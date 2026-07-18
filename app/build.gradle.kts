@@ -30,6 +30,7 @@ android {
         buildConfigField("String", "VEHICLE_BT_NAME", "\"${localProperties.getProperty("vehicle.btName", "")}\"")
 
         manifestPlaceholders["appAuthRedirectScheme"] = "com.flipvehiclewidget.app"
+        manifestPlaceholders["oauthRedirectHost"] = localProperties.getProperty("oauth.redirectHost", "example.invalid")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

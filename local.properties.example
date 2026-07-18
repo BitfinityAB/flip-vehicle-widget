@@ -2,4 +2,5 @@ sdk.dir=/path/to/Android/sdk
 tesla.clientId=your-tesla-developer-client-id
 proxy.baseUrl=https://your-proxy-domain.example.com/
 oauth.redirectUri=https://your-proxy-domain.example.com/oauth/callback
+oauth.redirectHost=your-proxy-domain.example.com
 vehicle.btName=Your Car's Display Name
