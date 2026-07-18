@@ -1,14 +1,29 @@
-version: "3.9"
-
 services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      - PROXY_DOMAIN=${PROXY_DOMAIN:?set PROXY_DOMAIN in proxy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./well-known:/srv/well-known:ro
+      - ./public-key:/srv/well-known/appspecific:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - tesla-http-proxy
+
   tesla-http-proxy:
     image: ghcr.io/teslamotors/vehicle-command/tesla-http-proxy:latest
     restart: unless-stopped
-    ports:
-      - "4443:443"
+    expose:
+      - "443"
     volumes:
-      - ./private-key/tls-key.pem:/etc/tesla/tls-key.pem:ro
-      - ./private-key/tls-cert.pem:/etc/tesla/tls-cert.pem:ro
+      - ./private-key/internal-tls-key.pem:/etc/tesla/tls-key.pem:ro
+      - ./private-key/internal-tls-cert.pem:/etc/tesla/tls-cert.pem:ro
       - ./private-key/signing-key.pem:/etc/tesla/signing-key.pem:ro
     command:
       - "-tls-key=/etc/tesla/tls-key.pem"
@@ -16,11 +31,6 @@ services:
       - "-key-file=/etc/tesla/signing-key.pem"
       - "-port=443"
 
-  public-key-host:
-    image: nginx:1.27-alpine
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-    volumes:
-      - ./public-key:/usr/share/nginx/html/.well-known/appspecific:ro
-      - ./well-known:/usr/share/nginx/html/.well-known:ro
+volumes:
+  caddy_data:
+  caddy_config:

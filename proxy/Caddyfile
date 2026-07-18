@@ -1,0 +1,20 @@
+{$PROXY_DOMAIN} {
+	@wellknown path /.well-known/*
+	handle @wellknown {
+		root * /srv/well-known
+		file_server
+	}
+
+	@oauth path /oauth/callback*
+	handle @oauth {
+		respond "You can close this tab and return to the app." 200
+	}
+
+	handle {
+		reverse_proxy tesla-http-proxy:443 {
+			transport http {
+				tls_insecure_skip_verify
+			}
+		}
+	}
+}

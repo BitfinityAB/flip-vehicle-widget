@@ -1,0 +1,39 @@
+name: Deploy signing proxy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "proxy/**"
+      - ".github/workflows/deploy-proxy.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HETZNER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.HETZNER_HOST }}" >> ~/.ssh/known_hosts
+
+      # --delete keeps the VPS copy in sync with this repo, but private-key/
+      # only ever exists on the VPS (gitignored, never in this checkout) --
+      # excluding it here is what stops --delete from wiping the real keys.
+      - name: Sync proxy config to VPS
+        run: |
+          rsync -az --delete \
+            --exclude 'private-key/' \
+            --exclude '.env' \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            proxy/ "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:/opt/flip-vehicle-widget-proxy/"
+
+      - name: Restart stack
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            "${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}" \
+            "cd /opt/flip-vehicle-widget-proxy && docker compose pull && docker compose up -d --remove-orphans"

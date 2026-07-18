@@ -36,3 +36,4 @@ build/
 
 # Signing proxy secrets (never commit)
 proxy/private-key/
+proxy/.env
