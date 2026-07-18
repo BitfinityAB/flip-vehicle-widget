@@ -20,6 +20,12 @@ services:
     image: tesla/vehicle-command:latest
     security_opt:
       - no-new-privileges:true
+    # Run as the host's deploy-user UID/GID (1000:1000, as created by the
+    # cloud-init in this repo's setup guide) so the 600-permission key files
+    # bind-mounted below stay readable -- the image's own default user
+    # (65532) can't read files owned by a different host UID at 600.
+    # Adjust if your deploy user has a different UID (check with `id deploy`).
+    user: "1000:1000"
     restart: unless-stopped
     expose:
       - "443"
