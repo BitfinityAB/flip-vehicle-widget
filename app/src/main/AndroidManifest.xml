@@ -23,9 +23,18 @@
             </intent-filter>
         </activity>
 
+        <!--
+          tools:node="replace" wipes out every attribute of AppAuth's own declaration, not just
+          the intent-filter this override exists to change: android:theme must be repeated
+          here too, or this activity (an AppCompatActivity) crashes with "You need to use a
+          Theme.AppCompat theme (or descendant) with this activity" the moment a real redirect
+          reaches it, since it'd otherwise fall back to this app's plain (non-AppCompat) default
+          theme.
+        -->
         <activity
             android:name="net.openid.appauth.RedirectUriReceiverActivity"
             android:exported="true"
+            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar"
             tools:node="replace">
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
@@ -37,6 +46,24 @@
                     android:pathPrefix="/oauth/callback" />
             </intent-filter>
         </activity>
+
+        <!--
+          AppAuth-Android's own AuthorizationManagementActivity (a separate component from
+          RedirectUriReceiverActivity above; this one relays the completed redirect back to
+          MainActivity's ActivityResult callback) ships with launchMode="singleTask". On
+          Android 14+ that causes it to be recreated instead of resumed when the redirect
+          arrives, silently losing the authorization result: MainActivity just restarts with
+          isAuthenticated still false, no crash, no error, token exchange never even attempted.
+          Overriding to singleInstance is the confirmed fix:
+          https://github.com/openid/AppAuth-Android/issues/977
+        -->
+        <activity
+            android:name="net.openid.appauth.AuthorizationManagementActivity"
+            android:exported="false"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|keyboard|keyboardHidden"
+            android:theme="@style/Theme.AppCompat.Translucent.NoTitleBar"
+            android:launchMode="singleInstance"
+            tools:node="replace" />
 
         <receiver
             android:name=".presentation.widget.VehicleWidgetProvider"
