@@ -76,6 +76,7 @@ dependencies {
     ksp("androidx.hilt:hilt-compiler:1.2.0")
 
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    implementation("androidx.startup:startup-runtime:1.1.1")
 
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
