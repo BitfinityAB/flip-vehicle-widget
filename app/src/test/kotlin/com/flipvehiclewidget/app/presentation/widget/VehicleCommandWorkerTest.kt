@@ -19,6 +19,7 @@ import com.flipvehiclewidget.app.domain.usecase.VehicleCommandUseCase
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import net.openid.appauth.AuthorizationException
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,10 +37,19 @@ private class FakeVehicleRepository(private val result: Result<CommandResult>) :
 
 @RunWith(RobolectricTestRunner::class)
 class VehicleCommandWorkerTest {
+    init {
+        VehicleWidgetProvider.updateDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+    }
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val appWidgetManager: AppWidgetManager = AppWidgetManager.getInstance(context)
     private val shadowManager: ShadowAppWidgetManager = shadowOf(appWidgetManager)
     private val appWidgetId = shadowManager.createWidget(VehicleWidgetProvider::class.java, R.layout.widget_layout)
+
+    @After
+    fun resetWidgetProviderDispatcher() {
+        VehicleWidgetProvider.updateDispatcher = kotlinx.coroutines.Dispatchers.IO
+    }
 
     private fun workerFactoryFor(
         repository: VehicleRepository,

@@ -6,6 +6,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
+import androidx.annotation.VisibleForTesting
 import com.flipvehiclewidget.app.R
 import com.flipvehiclewidget.app.domain.entity.ConnectionState
 import com.flipvehiclewidget.app.domain.entity.VehicleCommand
@@ -14,6 +15,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,13 +34,16 @@ class VehicleWidgetProvider : AppWidgetProvider() {
         val useCase = EntryPointAccessors.fromApplication(context, WidgetEntryPoint::class.java)
             .checkBluetoothConnectionUseCase()
 
-        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+        CoroutineScope(SupervisorJob() + updateDispatcher).launch {
             renderAll(context, appWidgetManager, appWidgetIds, useCase)
             pendingResult?.finish()
         }
     }
 
     companion object {
+        @VisibleForTesting
+        internal var updateDispatcher: CoroutineDispatcher = Dispatchers.IO
+
         private val BUTTON_IDS: Map<VehicleCommand, Int> = mapOf(
             VehicleCommand.TOGGLE_TRUNK to R.id.button_toggle_trunk,
             VehicleCommand.TOGGLE_FRUNK to R.id.button_toggle_frunk,

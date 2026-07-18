@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.flipvehiclewidget.app.R
 import com.flipvehiclewidget.app.domain.entity.VehicleCommand
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,10 +15,19 @@ import org.robolectric.shadows.ShadowAppWidgetManager
 
 @RunWith(RobolectricTestRunner::class)
 class VehicleWidgetProviderTest {
+    init {
+        VehicleWidgetProvider.updateDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+    }
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val appWidgetManager: AppWidgetManager = AppWidgetManager.getInstance(context)
     private val shadowManager: ShadowAppWidgetManager = shadowOf(appWidgetManager)
     private val appWidgetId = shadowManager.createWidget(VehicleWidgetProvider::class.java, R.layout.widget_layout)
+
+    @After
+    fun resetWidgetProviderDispatcher() {
+        VehicleWidgetProvider.updateDispatcher = kotlinx.coroutines.Dispatchers.IO
+    }
 
     @Test
     fun `disconnected state shows not-connected text and hides buttons`() {

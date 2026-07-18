@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.flipvehiclewidget.app.R
 import com.flipvehiclewidget.app.domain.entity.VehicleCommand
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -19,6 +20,10 @@ import org.robolectric.shadows.ShadowAppWidgetManager
 
 @RunWith(RobolectricTestRunner::class)
 class WidgetActionReceiverTest {
+    init {
+        VehicleWidgetProvider.updateDispatcher = kotlinx.coroutines.Dispatchers.Unconfined
+    }
+
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val appWidgetManager: AppWidgetManager = AppWidgetManager.getInstance(context)
     private val shadowManager: ShadowAppWidgetManager = shadowOf(appWidgetManager)
@@ -28,6 +33,11 @@ class WidgetActionReceiverTest {
     fun setUp() {
         val config = Configuration.Builder().build()
         WorkManagerTestInitHelper.initializeTestWorkManager(context, config)
+    }
+
+    @After
+    fun resetWidgetProviderDispatcher() {
+        VehicleWidgetProvider.updateDispatcher = kotlinx.coroutines.Dispatchers.IO
     }
 
     @Test
