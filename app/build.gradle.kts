@@ -89,6 +89,11 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("io.mockk:mockk:1.13.12")
+    // AppAuth's AuthState delegates to org.json.JSONObject, which the AGP unit-test
+    // classpath stubs to throw ("not mocked") unless a real implementation is present.
+    // Robolectric would also fix this, but this test isn't Robolectric-based, so we
+    // put the real org.json implementation on the test classpath instead.
+    testImplementation("org.json:json:20240303")
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("org.robolectric:robolectric:4.13")
     testImplementation("androidx.work:work-testing:2.9.1")
