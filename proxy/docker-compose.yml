@@ -55,6 +55,9 @@ services:
       - "-key-file=/etc/tesla/signing-key.pem"
       - "-host=0.0.0.0"
       - "-port=443"
+      # Temporary for incident troubleshooting -- remove after a few days. Logs each
+      # executed command with its VIN (proxy.go: log.Debug("Executing %s on %s", ...)).
+      - "-verbose"
 
 volumes:
   caddy_data:

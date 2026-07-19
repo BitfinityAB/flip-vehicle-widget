@@ -1,4 +1,7 @@
 {$PROXY_DOMAIN} {
+	# Temporary access logging for incident troubleshooting -- remove after a few days.
+	log
+
 	@wellknown path /.well-known/*
 	handle @wellknown {
 		uri strip_prefix /.well-known
