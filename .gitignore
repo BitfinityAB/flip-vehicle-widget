@@ -40,3 +40,6 @@ build/
 # Signing proxy secrets (never commit)
 proxy/private-key/
 proxy/.env
+
+# Superpowers brainstorming companion scratch files
+.superpowers/

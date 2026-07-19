@@ -84,7 +84,8 @@ class VehicleCommandWorkerTest {
     }
 
     @Test
-    fun `failed command retries and shows error state`() = runTest {
+    fun `failed command does not retry -- fails permanently and shows error state`() = runTest {
+        // Regression test: unbounded retry once caused a stale command to fire hours later.
         val repository = FakeVehicleRepository(Result.failure(RuntimeException("network down")))
         val useCases: Map<VehicleCommand, VehicleCommandUseCase> =
             mapOf(VehicleCommand.TOGGLE_TRUNK to ToggleTrunkUseCase(repository))
@@ -101,7 +102,10 @@ class VehicleCommandWorkerTest {
 
         val result = worker.doWork()
 
-        assert(result is ListenableWorker.Result.Retry)
+        assert(result is ListenableWorker.Result.Failure)
+        // ERROR (unlike LOADING) leaves the button enabled, so the user can tap again themselves.
+        val view = shadowManager.getViewFor(appWidgetId)
+        assertEquals(true, view.findViewById<android.widget.Button>(R.id.button_toggle_trunk).isEnabled)
     }
 
     @Test

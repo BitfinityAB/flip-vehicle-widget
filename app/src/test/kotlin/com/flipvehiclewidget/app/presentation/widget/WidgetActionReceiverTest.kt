@@ -56,4 +56,21 @@ class WidgetActionReceiverTest {
         val view = shadowManager.getViewFor(appWidgetId)
         assertEquals(false, view.findViewById<android.widget.Button>(R.id.button_toggle_trunk).isEnabled)
     }
+
+    @Test
+    fun `a second tap for the same button replaces rather than stacks a second pending job`() {
+        val intent = Intent(context, WidgetActionReceiver::class.java).apply {
+            action = WidgetActionReceiver.ACTION_EXECUTE_COMMAND
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            putExtra(WidgetActionReceiver.EXTRA_COMMAND, VehicleCommand.TOGGLE_TRUNK.name)
+        }
+
+        WidgetActionReceiver().onReceive(context, intent)
+        WidgetActionReceiver().onReceive(context, intent)
+
+        val uniqueWorkInfos = WorkManager.getInstance(context)
+            .getWorkInfosForUniqueWork("$appWidgetId-${VehicleCommand.TOGGLE_TRUNK.name}")
+            .get()
+        assertEquals(1, uniqueWorkInfos.size)
+    }
 }
