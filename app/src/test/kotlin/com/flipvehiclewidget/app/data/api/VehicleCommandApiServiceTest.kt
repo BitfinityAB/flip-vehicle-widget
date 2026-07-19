@@ -13,6 +13,8 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
 
+private const val TEST_VIN = "5YJ3E1EA1PF000001"
+
 class VehicleCommandApiServiceTest {
     private lateinit var server: MockWebServer
     private lateinit var service: VehicleCommandApiService
@@ -38,11 +40,11 @@ class VehicleCommandApiServiceTest {
     fun `actuateTrunk posts which_trunk body and parses result`() = runTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody("""{"response":{"result":true,"reason":null}}"""))
 
-        val result = service.actuateTrunk(vehicleId = 7L, body = ActuateTrunkRequestDto(whichTrunk = "rear"))
+        val result = service.actuateTrunk(vin = TEST_VIN, body = ActuateTrunkRequestDto(whichTrunk = "rear"))
 
         assertEquals(true, result.response.result)
         val recorded = server.takeRequest()
-        assertEquals("/api/1/vehicles/7/command/actuate_trunk", recorded.path)
+        assertEquals("/api/1/vehicles/$TEST_VIN/command/actuate_trunk", recorded.path)
         assertEquals("""{"which_trunk":"rear"}""", recorded.body.readUtf8())
     }
 
@@ -50,10 +52,10 @@ class VehicleCommandApiServiceTest {
     fun `stopClimate posts to auto_conditioning_stop`() = runTest {
         server.enqueue(MockResponse().setResponseCode(200).setBody("""{"response":{"result":true,"reason":null}}"""))
 
-        val result = service.stopClimate(vehicleId = 7L)
+        val result = service.stopClimate(vin = TEST_VIN)
 
         assertEquals(true, result.response.result)
         val recorded = server.takeRequest()
-        assertEquals("/api/1/vehicles/7/command/auto_conditioning_stop", recorded.path)
+        assertEquals("/api/1/vehicles/$TEST_VIN/command/auto_conditioning_stop", recorded.path)
     }
 }

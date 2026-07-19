@@ -3,7 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!--
+      neverForLocation: we only ever match a known device name (the vehicle's BLE beacon, see
+      data/bluetooth/TeslaBleBeaconName), never derive physical location from scan results, so
+      this permission doesn't also require ACCESS_FINE_LOCATION.
+    -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".FlipWidgetApplication"
@@ -84,6 +92,25 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="com.flipvehiclewidget.app.action.EXECUTE_COMMAND" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Target of the system-managed BLE scan's PendingIntent; see VehicleBeaconScanner. -->
+        <receiver
+            android:name=".presentation.widget.VehicleBeaconReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.flipvehiclewidget.app.action.BEACON_SCAN_RESULT" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Re-registers the BLE scan after reboot, since scan registrations don't survive one. -->
+        <receiver
+            android:name=".presentation.widget.VehicleBeaconBootReceiver"
+            android:exported="true"
+            android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

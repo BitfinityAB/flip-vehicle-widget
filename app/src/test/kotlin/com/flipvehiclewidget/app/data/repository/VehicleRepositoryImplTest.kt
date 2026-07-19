@@ -11,16 +11,22 @@ import com.flipvehiclewidget.app.data.api.dto.VehicleDataResponseDto
 import com.flipvehiclewidget.app.data.api.dto.VehicleDto
 import com.flipvehiclewidget.app.data.api.dto.VehicleStateDto
 import com.flipvehiclewidget.app.data.api.dto.VehiclesResponseDto
+import com.flipvehiclewidget.app.data.local.VehicleVinCache
+import com.flipvehiclewidget.app.domain.entity.Vehicle
 import io.mockk.coEvery
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
+private val TEST_VEHICLE = Vehicle(id = 7L, vin = "5YJ3E1EA1PF000001", displayName = "Car")
+
 class VehicleRepositoryImplTest {
     private val vehicleApiService = mockk<VehicleApiService>()
     private val commandApiService = mockk<VehicleCommandApiService>()
-    private val repository = VehicleRepositoryImpl(vehicleApiService, commandApiService)
+    private val vehicleVinCache = mockk<VehicleVinCache>(relaxed = true)
+    private val repository = VehicleRepositoryImpl(vehicleApiService, commandApiService, vehicleVinCache)
 
     @Test
     fun `getVehicle maps first vehicle from list`() = runTest {
@@ -36,6 +42,18 @@ class VehicleRepositoryImplTest {
     }
 
     @Test
+    fun `getVehicle caches the VIN for beacon scanning`() = runTest {
+        coEvery { vehicleApiService.getVehicles() } returns VehiclesResponseDto(
+            response = listOf(VehicleDto(id = 7L, vin = "5YJSA1E14FF101183", displayName = "Car")),
+            count = 1,
+        )
+
+        repository.getVehicle().getOrThrow()
+
+        verify { vehicleVinCache.save("5YJSA1E14FF101183") }
+    }
+
+    @Test
     fun `getVehicle fails when account has no vehicles`() = runTest {
         coEvery { vehicleApiService.getVehicles() } returns VehiclesResponseDto(response = emptyList(), count = 0)
 
@@ -45,71 +63,71 @@ class VehicleRepositoryImplTest {
     }
 
     @Test
-    fun `toggleTrunk requests rear trunk and maps result`() = runTest {
+    fun `toggleTrunk requests rear trunk by VIN and maps result`() = runTest {
         coEvery {
-            commandApiService.actuateTrunk(7L, ActuateTrunkRequestDto(whichTrunk = "rear"))
+            commandApiService.actuateTrunk(TEST_VEHICLE.vin, ActuateTrunkRequestDto(whichTrunk = "rear"))
         } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
 
-        val result = repository.toggleTrunk(7L).getOrThrow()
+        val result = repository.toggleTrunk(TEST_VEHICLE).getOrThrow()
 
         assertEquals(true, result.success)
     }
 
     @Test
-    fun `toggleFrunk requests front trunk`() = runTest {
+    fun `toggleFrunk requests front trunk by VIN`() = runTest {
         coEvery {
-            commandApiService.actuateTrunk(7L, ActuateTrunkRequestDto(whichTrunk = "front"))
+            commandApiService.actuateTrunk(TEST_VEHICLE.vin, ActuateTrunkRequestDto(whichTrunk = "front"))
         } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
 
-        val result = repository.toggleFrunk(7L).getOrThrow()
+        val result = repository.toggleFrunk(TEST_VEHICLE).getOrThrow()
 
         assertEquals(true, result.success)
     }
 
     @Test
-    fun `toggleClimate stops climate when currently on`() = runTest {
-        coEvery { vehicleApiService.getVehicleData(7L) } returns VehicleDataResponseDto(
+    fun `toggleClimate reads state by id but commands by VIN, stopping when currently on`() = runTest {
+        coEvery { vehicleApiService.getVehicleData(TEST_VEHICLE.id) } returns VehicleDataResponseDto(
             VehicleDataDto(vehicleState = VehicleStateDto(locked = true), climateState = ClimateStateDto(isClimateOn = true)),
         )
-        coEvery { commandApiService.stopClimate(7L) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
+        coEvery { commandApiService.stopClimate(TEST_VEHICLE.vin) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
 
-        val result = repository.toggleClimate(7L).getOrThrow()
+        val result = repository.toggleClimate(TEST_VEHICLE).getOrThrow()
 
         assertEquals(true, result.success)
     }
 
     @Test
     fun `toggleClimate starts climate when currently off`() = runTest {
-        coEvery { vehicleApiService.getVehicleData(7L) } returns VehicleDataResponseDto(
+        coEvery { vehicleApiService.getVehicleData(TEST_VEHICLE.id) } returns VehicleDataResponseDto(
             VehicleDataDto(vehicleState = VehicleStateDto(locked = true), climateState = ClimateStateDto(isClimateOn = false)),
         )
-        coEvery { commandApiService.startClimate(7L) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
+        coEvery { commandApiService.startClimate(TEST_VEHICLE.vin) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
 
-        val result = repository.toggleClimate(7L).getOrThrow()
+        val result = repository.toggleClimate(TEST_VEHICLE).getOrThrow()
 
         assertEquals(true, result.success)
     }
 
     @Test
-    fun `toggleLocks unlocks when currently locked`() = runTest {
-        coEvery { vehicleApiService.getVehicleData(7L) } returns VehicleDataResponseDto(
+    fun `toggleLocks unlocks by VIN when currently locked`() = runTest {
+        coEvery { vehicleApiService.getVehicleData(TEST_VEHICLE.id) } returns VehicleDataResponseDto(
             VehicleDataDto(vehicleState = VehicleStateDto(locked = true), climateState = ClimateStateDto(isClimateOn = false)),
         )
-        coEvery { commandApiService.unlockDoors(7L) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
+        coEvery { commandApiService.unlockDoors(TEST_VEHICLE.vin) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
 
-        val result = repository.toggleLocks(7L).getOrThrow()
+        val result = repository.toggleLocks(TEST_VEHICLE).getOrThrow()
 
         assertEquals(true, result.success)
     }
 
     @Test
-    fun `toggleLocks locks when currently unlocked`() = runTest {
-        coEvery { vehicleApiService.getVehicleData(7L) } returns VehicleDataResponseDto(
+    fun `toggleLocks locks by VIN when currently unlocked`() = runTest {
+        coEvery { vehicleApiService.getVehicleData(TEST_VEHICLE.id) } returns VehicleDataResponseDto(
             VehicleDataDto(vehicleState = VehicleStateDto(locked = false), climateState = ClimateStateDto(isClimateOn = false)),
         )
-        coEvery { commandApiService.lockDoors(7L) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
+        coEvery { commandApiService.lockDoors(TEST_VEHICLE.vin) } returns CommandResponseDto(CommandResultDto(result = true, reason = null))
 
-        val result = repository.toggleLocks(7L).getOrThrow()
+        val result = repository.toggleLocks(TEST_VEHICLE).getOrThrow()
 
         assertEquals(true, result.success)
     }

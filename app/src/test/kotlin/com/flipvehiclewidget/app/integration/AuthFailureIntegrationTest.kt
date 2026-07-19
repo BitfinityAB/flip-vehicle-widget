@@ -4,6 +4,7 @@ import com.flipvehiclewidget.app.data.api.AuthInterceptor
 import com.flipvehiclewidget.app.data.api.VehicleApiService
 import com.flipvehiclewidget.app.data.api.VehicleCommandApiService
 import com.flipvehiclewidget.app.data.local.TokenManager
+import com.flipvehiclewidget.app.data.local.VehicleVinCache
 import com.flipvehiclewidget.app.data.repository.VehicleRepositoryImpl
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import io.mockk.coEvery
@@ -47,6 +48,7 @@ class AuthFailureIntegrationTest {
         repository = VehicleRepositoryImpl(
             retrofit.create(VehicleApiService::class.java),
             retrofit.create(VehicleCommandApiService::class.java),
+            mockk<VehicleVinCache>(relaxed = true),
         )
     }
 

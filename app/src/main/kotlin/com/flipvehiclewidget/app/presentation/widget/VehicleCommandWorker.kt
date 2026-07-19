@@ -35,7 +35,7 @@ class VehicleCommandWorker @AssistedInject constructor(
         }
 
         val useCase = useCases[command] ?: return Result.failure()
-        val outcome = useCase(vehicle.id)
+        val outcome = useCase(vehicle)
 
         return outcome.fold(
             onSuccess = { commandResult ->

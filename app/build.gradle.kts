@@ -9,6 +9,28 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// versionName gets a git-derived suffix (see below) so the Android App Info screen can
+// distinguish sideloaded debug builds from each other -- "1.0" alone looks identical across
+// every build regardless of what source it was actually built from.
+fun gitOutput(vararg args: String): String? = try {
+    ProcessBuilder("git", *args)
+        .directory(rootProject.projectDir)
+        .redirectErrorStream(true)
+        .start()
+        .let { process ->
+            val output = process.inputStream.bufferedReader().readText().trim()
+            if (process.waitFor() == 0) output else null
+        }
+} catch (e: Exception) {
+    null
+}
+
+val gitVersionSuffix = run {
+    val hash = gitOutput("rev-parse", "--short=7", "HEAD") ?: "unknown"
+    val dirty = !gitOutput("status", "--porcelain").isNullOrEmpty()
+    hash + if (dirty) "-dirty" else ""
+}
+
 android {
     namespace = "com.flipvehiclewidget.app"
     compileSdk = 34
@@ -18,7 +40,7 @@ android {
         minSdk = 31
         targetSdk = 34
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.0-$gitVersionSuffix"
 
         val localProperties = Properties().apply {
             val file = rootProject.file("local.properties")
@@ -27,7 +49,6 @@ android {
         buildConfigField("String", "TESLA_CLIENT_ID", "\"${localProperties.getProperty("tesla.clientId", "")}\"")
         buildConfigField("String", "PROXY_BASE_URL", "\"${localProperties.getProperty("proxy.baseUrl", "https://example.invalid/")}\"")
         buildConfigField("String", "OAUTH_REDIRECT_URI", "\"${localProperties.getProperty("oauth.redirectUri", "https://example.invalid/oauth/callback")}\"")
-        buildConfigField("String", "VEHICLE_BT_NAME", "\"${localProperties.getProperty("vehicle.btName", "")}\"")
 
         manifestPlaceholders["appAuthRedirectScheme"] = "com.flipvehiclewidget.app"
         manifestPlaceholders["oauthRedirectHost"] = localProperties.getProperty("oauth.redirectHost", "example.invalid")

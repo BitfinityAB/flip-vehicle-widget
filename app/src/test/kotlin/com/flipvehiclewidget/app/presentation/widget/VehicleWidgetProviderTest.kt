@@ -65,13 +65,11 @@ class VehicleWidgetProviderTest {
 
     @Test
     fun `renderAll shows connected state when bluetooth check reports connected`() = kotlinx.coroutines.test.runTest {
+        val proximityStore = io.mockk.mockk<com.flipvehiclewidget.app.data.local.VehicleProximityStore> {
+            io.mockk.every { isVehicleNearby() } returns true
+        }
         val useCase = com.flipvehiclewidget.app.domain.usecase.CheckBluetoothConnectionUseCase(
-            com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectionManager(
-                gateway = object : com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectivityGateway {
-                    override suspend fun connectedDeviceNames(): List<String> = listOf("Model 3")
-                },
-                vehicleBluetoothName = "Model 3",
-            ),
+            com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectionManager(proximityStore),
         )
 
         VehicleWidgetProvider.renderAll(context, appWidgetManager, intArrayOf(appWidgetId), useCase)
@@ -82,13 +80,11 @@ class VehicleWidgetProviderTest {
 
     @Test
     fun `renderAll shows disconnected state when bluetooth check reports disconnected`() = kotlinx.coroutines.test.runTest {
+        val proximityStore = io.mockk.mockk<com.flipvehiclewidget.app.data.local.VehicleProximityStore> {
+            io.mockk.every { isVehicleNearby() } returns false
+        }
         val useCase = com.flipvehiclewidget.app.domain.usecase.CheckBluetoothConnectionUseCase(
-            com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectionManager(
-                gateway = object : com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectivityGateway {
-                    override suspend fun connectedDeviceNames(): List<String> = emptyList()
-                },
-                vehicleBluetoothName = "Model 3",
-            ),
+            com.flipvehiclewidget.app.data.bluetooth.BluetoothConnectionManager(proximityStore),
         )
 
         VehicleWidgetProvider.renderAll(context, appWidgetManager, intArrayOf(appWidgetId), useCase)

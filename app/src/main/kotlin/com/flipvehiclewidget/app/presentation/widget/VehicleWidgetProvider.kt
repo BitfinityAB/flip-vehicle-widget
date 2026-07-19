@@ -3,6 +3,7 @@ package com.flipvehiclewidget.app.presentation.widget
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.widget.RemoteViews
@@ -43,6 +44,23 @@ class VehicleWidgetProvider : AppWidgetProvider() {
     companion object {
         @VisibleForTesting
         internal var updateDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+        // vehicle_widget_info.xml sets updatePeriodMillis="0" (system-scheduled refresh is too
+        // coarse -- 30 min minimum -- for "walk up to the car and tap a button"), so onUpdate
+        // only ever fires once, at widget-add time, unless something explicitly triggers it.
+        // Called by MainActivity on launch and by VehicleBeaconReceiver whenever the BLE
+        // proximity signal changes.
+        fun requestRefresh(context: Context) {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, VehicleWidgetProvider::class.java))
+            if (appWidgetIds.isEmpty()) return
+            context.sendBroadcast(
+                Intent(context, VehicleWidgetProvider::class.java).apply {
+                    action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
+                },
+            )
+        }
 
         private val BUTTON_IDS: Map<VehicleCommand, Int> = mapOf(
             VehicleCommand.TOGGLE_TRUNK to R.id.button_toggle_trunk,

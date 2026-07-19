@@ -28,11 +28,11 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.shadows.ShadowAppWidgetManager
 
 private class FakeVehicleRepository(private val result: Result<CommandResult>) : VehicleRepository {
-    override suspend fun getVehicle(): Result<Vehicle> = Result.success(Vehicle(7L, "vin", "Car"))
-    override suspend fun toggleTrunk(vehicleId: Long): Result<CommandResult> = result
-    override suspend fun toggleFrunk(vehicleId: Long): Result<CommandResult> = result
-    override suspend fun toggleClimate(vehicleId: Long): Result<CommandResult> = result
-    override suspend fun toggleLocks(vehicleId: Long): Result<CommandResult> = result
+    override suspend fun getVehicle(): Result<Vehicle> = Result.success(Vehicle(7L, "5YJ3E1EA1PF000001", "Car"))
+    override suspend fun toggleTrunk(vehicle: Vehicle): Result<CommandResult> = result
+    override suspend fun toggleFrunk(vehicle: Vehicle): Result<CommandResult> = result
+    override suspend fun toggleClimate(vehicle: Vehicle): Result<CommandResult> = result
+    override suspend fun toggleLocks(vehicle: Vehicle): Result<CommandResult> = result
 }
 
 @RunWith(RobolectricTestRunner::class)

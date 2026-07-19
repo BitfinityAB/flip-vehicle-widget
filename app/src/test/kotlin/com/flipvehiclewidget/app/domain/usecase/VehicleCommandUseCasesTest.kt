@@ -8,30 +8,31 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 private class FakeVehicleRepository : VehicleRepository {
-    var lastVehicleId: Long? = null
+    var lastVehicle: Vehicle? = null
 
     override suspend fun getVehicle(): Result<Vehicle> =
-        Result.success(Vehicle(id = 7L, vin = "vin", displayName = "Car"))
+        Result.success(Vehicle(id = 7L, vin = "5YJ3E1EA1PF000001", displayName = "Car"))
 
-    override suspend fun toggleTrunk(vehicleId: Long): Result<CommandResult> {
-        lastVehicleId = vehicleId
+    override suspend fun toggleTrunk(vehicle: Vehicle): Result<CommandResult> {
+        lastVehicle = vehicle
         return Result.success(CommandResult(success = true, reason = null))
     }
 
-    override suspend fun toggleFrunk(vehicleId: Long) = toggleTrunk(vehicleId)
-    override suspend fun toggleClimate(vehicleId: Long) = toggleTrunk(vehicleId)
-    override suspend fun toggleLocks(vehicleId: Long) = toggleTrunk(vehicleId)
+    override suspend fun toggleFrunk(vehicle: Vehicle) = toggleTrunk(vehicle)
+    override suspend fun toggleClimate(vehicle: Vehicle) = toggleTrunk(vehicle)
+    override suspend fun toggleLocks(vehicle: Vehicle) = toggleTrunk(vehicle)
 }
 
 class VehicleCommandUseCasesTest {
     @Test
-    fun `toggle trunk use case delegates to repository with vehicle id`() = runTest {
+    fun `toggle trunk use case delegates to repository with the vehicle (vin, not just id)`() = runTest {
         val repository = FakeVehicleRepository()
         val useCase = ToggleTrunkUseCase(repository)
+        val vehicle = Vehicle(id = 7L, vin = "5YJ3E1EA1PF000001", displayName = "Car")
 
-        val result = useCase(vehicleId = 7L)
+        val result = useCase(vehicle)
 
-        assertEquals(7L, repository.lastVehicleId)
+        assertEquals(vehicle, repository.lastVehicle)
         assertEquals(true, result.getOrThrow().success)
     }
 }
