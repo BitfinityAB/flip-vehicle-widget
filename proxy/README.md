@@ -83,10 +83,43 @@ actually talks to, with a real Let's Encrypt cert for your domain.
    vehicle.btName=Your Car's Bluetooth Display Name
    ```
 
-9. **Enroll the virtual key on the vehicle** (one-time, per vehicle):
-   open `https://tesla.com/_ak/your-domain` on a phone with the Tesla
-   app installed and the vehicle nearby, and approve the pairing
-   request from the vehicle's touchscreen.
+9. **Register your domain with the Fleet API** (one-time, per app -- this
+   is separate from creating the app in the developer portal, and is easy
+   to miss since nothing in the portal UI prompts for it). Skipping this
+   step makes the vehicle enrollment page in step 10 fail with "Unable to
+   Grant Third-Party Access -- This third party isn't registered with
+   Tesla." Run on the VPS, where `TESLA_CLIENT_SECRET` already lives in
+   `proxy/.env` -- never type the secret anywhere else:
+   ```bash
+   cd /opt/flip-vehicle-widget-proxy
+   set -a; source .env; set +a
+   CLIENT_ID="your-tesla-client-id"
+   # Use the Fleet API base URL for your account's region:
+   #   NA: https://fleet-api.prd.na.vn.cloud.tesla.com
+   #   EU: https://fleet-api.prd.eu.vn.cloud.tesla.com
+   FLEET_API_BASE="https://fleet-api.prd.eu.vn.cloud.tesla.com"
+
+   ACCESS_TOKEN=$(curl -s -X POST https://fleet-auth.prd.vn.cloud.tesla.com/oauth2/v3/token \
+     -d "grant_type=client_credentials" \
+     -d "client_id=${CLIENT_ID}" \
+     -d "client_secret=${TESLA_CLIENT_SECRET}" \
+     -d "scope=openid vehicle_device_data vehicle_cmds vehicle_charging_cmds" \
+     -d "audience=${FLEET_API_BASE}" \
+     | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+   curl -s -X POST "${FLEET_API_BASE}/api/1/partner_accounts" \
+     -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -d '{"domain": "your-domain"}'
+   ```
+   A `200` response echoing back your `domain` and a `public_key` matching
+   `https://your-domain/.well-known/appspecific/com.tesla.3p.public-key.pem`
+   confirms registration succeeded.
+
+10. **Enroll the virtual key on the vehicle** (one-time, per vehicle):
+    open `https://tesla.com/_ak/your-domain` on a phone with the Tesla
+    app installed and the vehicle nearby, and approve the pairing
+    request from the vehicle's touchscreen.
 
 ## Verifying the proxy after deploy
 
