@@ -6,14 +6,38 @@
     android:background="@drawable/widget_background"
     android:padding="@dimen/widget_padding">
 
-    <TextView
-        android:id="@+id/text_not_connected"
+    <FrameLayout
+        android:id="@+id/disconnected_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center"
-        android:textColor="#888888"
-        android:text="@string/widget_not_connected"
-        android:visibility="gone" />
+        android:visibility="gone">
+
+        <FrameLayout
+            android:id="@+id/button_connect"
+            android:layout_width="@dimen/widget_connect_tile_size"
+            android:layout_height="@dimen/widget_connect_tile_size"
+            android:layout_gravity="center"
+            android:background="@drawable/widget_tile_inactive">
+
+            <ImageView
+                android:id="@+id/icon_connect"
+                android:layout_width="@dimen/widget_tile_icon_size"
+                android:layout_height="@dimen/widget_tile_icon_size"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_connect"
+                android:contentDescription="@string/widget_connect" />
+
+            <ProgressBar
+                android:id="@+id/progress_connect"
+                style="?android:attr/progressBarStyleSmall"
+                android:layout_width="@dimen/widget_tile_icon_size"
+                android:layout_height="@dimen/widget_tile_icon_size"
+                android:layout_gravity="center"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/connected_container"
@@ -22,37 +46,125 @@
         android:orientation="vertical"
         android:visibility="gone">
 
-        <Button
-            android:id="@+id/button_toggle_trunk"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:textSize="@dimen/widget_button_text_size"
-            android:text="@string/widget_toggle_trunk" />
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/button_toggle_frunk"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:textSize="@dimen/widget_button_text_size"
-            android:text="@string/widget_toggle_frunk" />
+            <FrameLayout
+                android:id="@+id/button_toggle_frunk"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="@dimen/widget_tile_margin"
+                android:background="@drawable/widget_tile_inactive">
 
-        <Button
-            android:id="@+id/button_toggle_climate"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:textSize="@dimen/widget_button_text_size"
-            android:text="@string/widget_toggle_climate" />
+                <ImageView
+                    android:id="@+id/icon_toggle_frunk"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_frunk_closed"
+                    android:contentDescription="@string/widget_toggle_frunk" />
 
-        <Button
-            android:id="@+id/button_toggle_locks"
+                <ProgressBar
+                    android:id="@+id/progress_toggle_frunk"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/button_toggle_trunk"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="@dimen/widget_tile_margin"
+                android:background="@drawable/widget_tile_inactive">
+
+                <ImageView
+                    android:id="@+id/icon_toggle_trunk"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_trunk_closed"
+                    android:contentDescription="@string/widget_toggle_trunk" />
+
+                <ProgressBar
+                    android:id="@+id/progress_toggle_trunk"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:textSize="@dimen/widget_button_text_size"
-            android:text="@string/widget_toggle_locks" />
+            android:orientation="horizontal">
+
+            <FrameLayout
+                android:id="@+id/button_toggle_climate"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="@dimen/widget_tile_margin"
+                android:background="@drawable/widget_tile_inactive">
+
+                <ImageView
+                    android:id="@+id/icon_toggle_climate"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_climate_off"
+                    android:contentDescription="@string/widget_toggle_climate" />
+
+                <ProgressBar
+                    android:id="@+id/progress_toggle_climate"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+            <FrameLayout
+                android:id="@+id/button_toggle_locks"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_margin="@dimen/widget_tile_margin"
+                android:background="@drawable/widget_tile_inactive">
+
+                <ImageView
+                    android:id="@+id/icon_toggle_locks"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:src="@drawable/ic_lock"
+                    android:contentDescription="@string/widget_toggle_locks" />
+
+                <ProgressBar
+                    android:id="@+id/progress_toggle_locks"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="@dimen/widget_tile_icon_size"
+                    android:layout_height="@dimen/widget_tile_icon_size"
+                    android:layout_gravity="center"
+                    android:visibility="gone" />
+
+            </FrameLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
 

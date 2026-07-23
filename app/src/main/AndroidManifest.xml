@@ -3,14 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!--
-      neverForLocation: we only ever match a known device name (the vehicle's BLE beacon, see
-      data/bluetooth/TeslaBleBeaconName), never derive physical location from scan results, so
-      this permission doesn't also require ACCESS_FINE_LOCATION.
-    -->
-    <uses-permission
-        android:name="android.permission.BLUETOOTH_SCAN"
-        android:usesPermissionFlags="neverForLocation" />
+    <!-- No neverForLocation: some OEM Bluetooth stacks need ACCESS_FINE_LOCATION for full scan results anyway. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
@@ -94,6 +89,10 @@
                 <action android:name="com.flipvehiclewidget.app.action.EXECUTE_COMMAND" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".presentation.widget.WidgetConnectReceiver"
+            android:exported="false" />
 
         <!-- Target of the system-managed BLE scan's PendingIntent; see VehicleBeaconScanner. -->
         <receiver

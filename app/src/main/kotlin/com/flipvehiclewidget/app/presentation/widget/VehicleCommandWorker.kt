@@ -6,7 +6,9 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.flipvehiclewidget.app.data.local.TokenManager
+import com.flipvehiclewidget.app.data.local.VehicleStatusStore
 import com.flipvehiclewidget.app.domain.entity.VehicleCommand
+import com.flipvehiclewidget.app.domain.entity.VehicleStatus
 import com.flipvehiclewidget.app.domain.repository.VehicleRepository
 import com.flipvehiclewidget.app.domain.usecase.VehicleCommandUseCase
 import dagger.assisted.Assisted
@@ -21,6 +23,7 @@ class VehicleCommandWorker @AssistedInject constructor(
     private val repository: VehicleRepository,
     private val useCases: Map<VehicleCommand, @JvmSuppressWildcards VehicleCommandUseCase>,
     private val tokenManager: TokenManager,
+    private val vehicleStatusStore: VehicleStatusStore,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -50,7 +53,7 @@ class VehicleCommandWorker @AssistedInject constructor(
         )
     }
 
-    private fun handleFailure(appWidgetId: Int, command: VehicleCommand, error: Throwable): Result {
+    private suspend fun handleFailure(appWidgetId: Int, command: VehicleCommand, error: Throwable): Result {
         // Coroutine stack-trace recovery can wrap AuthInterceptor's IOException(AuthorizationException)
         // again, so check the whole cause chain, not just one level.
         val isAuthFailure = generateSequence(error) { it.cause }.any { it is AuthorizationException }
@@ -65,14 +68,24 @@ class VehicleCommandWorker @AssistedInject constructor(
         return Result.failure()
     }
 
-    private fun render(appWidgetId: Int, command: VehicleCommand, buttonState: CommandButtonState) {
+    private suspend fun render(appWidgetId: Int, command: VehicleCommand, buttonState: CommandButtonState) {
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
         VehicleWidgetProvider.render(
             applicationContext,
             AppWidgetManager.getInstance(applicationContext),
             appWidgetId,
-            WidgetState.Connected(commandStates = mapOf(command to buttonState)),
+            WidgetState.Connected(commandStates = mapOf(command to buttonState), status = resolveStatus(buttonState)),
         )
+    }
+
+    // A successful command likely changed vehicle state, so re-fetch; a failed one didn't, so the
+    // cached snapshot is both accurate and avoids a second doomed call right after one failure.
+    private suspend fun resolveStatus(buttonState: CommandButtonState): VehicleStatus? {
+        if (buttonState != CommandButtonState.IDLE) return vehicleStatusStore.lastKnown()
+        val vehicle = repository.getVehicle().getOrNull() ?: return vehicleStatusStore.lastKnown()
+        val status = repository.getVehicleStatus(vehicle).getOrNull() ?: return vehicleStatusStore.lastKnown()
+        vehicleStatusStore.save(status)
+        return status
     }
 
     private fun renderDisconnected(appWidgetId: Int) {
@@ -81,7 +94,7 @@ class VehicleCommandWorker @AssistedInject constructor(
             applicationContext,
             AppWidgetManager.getInstance(applicationContext),
             appWidgetId,
-            WidgetState.Disconnected,
+            WidgetState.Disconnected(),
         )
     }
 

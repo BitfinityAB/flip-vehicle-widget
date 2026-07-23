@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Flip Vehicle Widget</string>
-    <string name="widget_not_connected">Not connected</string>
+    <string name="widget_connect">Connect</string>
     <string name="widget_toggle_trunk">Trunk</string>
     <string name="widget_toggle_frunk">Frunk</string>
     <string name="widget_toggle_climate">Climate</string>

@@ -9,9 +9,17 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import androidx.work.workDataOf
+import com.flipvehiclewidget.app.data.local.VehicleStatusStore
 import com.flipvehiclewidget.app.domain.entity.VehicleCommand
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class WidgetActionReceiver : BroadcastReceiver() {
+
+    @Inject
+    lateinit var vehicleStatusStore: VehicleStatusStore
+
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_EXECUTE_COMMAND) return
 
@@ -24,7 +32,10 @@ class WidgetActionReceiver : BroadcastReceiver() {
             context,
             AppWidgetManager.getInstance(context),
             appWidgetId,
-            WidgetState.Connected(commandStates = mapOf(command to CommandButtonState.LOADING)),
+            WidgetState.Connected(
+                commandStates = mapOf(command to CommandButtonState.LOADING),
+                status = vehicleStatusStore.lastKnown(),
+            ),
         )
 
         // Expedited so the tap isn't blocked by Doze/App Standby (seen on-device as background

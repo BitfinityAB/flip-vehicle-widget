@@ -10,9 +10,11 @@ import androidx.work.testing.TestListenableWorkerBuilder
 import androidx.work.workDataOf
 import com.flipvehiclewidget.app.R
 import com.flipvehiclewidget.app.data.local.TokenManager
+import com.flipvehiclewidget.app.data.local.VehicleStatusStore
 import com.flipvehiclewidget.app.domain.entity.CommandResult
 import com.flipvehiclewidget.app.domain.entity.Vehicle
 import com.flipvehiclewidget.app.domain.entity.VehicleCommand
+import com.flipvehiclewidget.app.domain.entity.VehicleStatus
 import com.flipvehiclewidget.app.domain.repository.VehicleRepository
 import com.flipvehiclewidget.app.domain.usecase.ToggleTrunkUseCase
 import com.flipvehiclewidget.app.domain.usecase.VehicleCommandUseCase
@@ -29,6 +31,8 @@ import org.robolectric.shadows.ShadowAppWidgetManager
 
 private class FakeVehicleRepository(private val result: Result<CommandResult>) : VehicleRepository {
     override suspend fun getVehicle(): Result<Vehicle> = Result.success(Vehicle(7L, "5YJ3E1EA1PF000001", "Car"))
+    override suspend fun getVehicleStatus(vehicle: Vehicle): Result<VehicleStatus> =
+        Result.success(VehicleStatus(locked = true, climateOn = false, frontTrunkOpen = false, rearTrunkOpen = false))
     override suspend fun toggleTrunk(vehicle: Vehicle): Result<CommandResult> = result
     override suspend fun toggleFrunk(vehicle: Vehicle): Result<CommandResult> = result
     override suspend fun toggleClimate(vehicle: Vehicle): Result<CommandResult> = result
@@ -55,9 +59,10 @@ class VehicleCommandWorkerTest {
         repository: VehicleRepository,
         useCases: Map<VehicleCommand, VehicleCommandUseCase>,
         tokenManager: TokenManager,
+        vehicleStatusStore: VehicleStatusStore = mockk(relaxed = true),
     ) = object : WorkerFactory() {
         override fun createWorker(appContext: Context, workerClassName: String, workerParameters: WorkerParameters): ListenableWorker =
-            VehicleCommandWorker(appContext, workerParameters, repository, useCases, tokenManager)
+            VehicleCommandWorker(appContext, workerParameters, repository, useCases, tokenManager, vehicleStatusStore)
     }
 
     @Test
@@ -80,7 +85,7 @@ class VehicleCommandWorkerTest {
 
         assert(result is ListenableWorker.Result.Success)
         val view = shadowManager.getViewFor(appWidgetId)
-        assertEquals(true, view.findViewById<android.widget.Button>(R.id.button_toggle_trunk).isEnabled)
+        assertEquals(true, view.findViewById<android.view.View>(R.id.button_toggle_trunk).isEnabled)
     }
 
     @Test
@@ -105,7 +110,7 @@ class VehicleCommandWorkerTest {
         assert(result is ListenableWorker.Result.Failure)
         // ERROR (unlike LOADING) leaves the button enabled, so the user can tap again themselves.
         val view = shadowManager.getViewFor(appWidgetId)
-        assertEquals(true, view.findViewById<android.widget.Button>(R.id.button_toggle_trunk).isEnabled)
+        assertEquals(true, view.findViewById<android.view.View>(R.id.button_toggle_trunk).isEnabled)
     }
 
     @Test
@@ -132,7 +137,7 @@ class VehicleCommandWorkerTest {
 
         assert(result is ListenableWorker.Result.Failure)
         val view = shadowManager.getViewFor(appWidgetId)
-        assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.text_not_connected).visibility)
+        assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.disconnected_container).visibility)
     }
 
     @Test
@@ -161,6 +166,6 @@ class VehicleCommandWorkerTest {
 
         assert(result is ListenableWorker.Result.Failure)
         val view = shadowManager.getViewFor(appWidgetId)
-        assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.text_not_connected).visibility)
+        assertEquals(android.view.View.VISIBLE, view.findViewById<android.view.View>(R.id.disconnected_container).visibility)
     }
 }

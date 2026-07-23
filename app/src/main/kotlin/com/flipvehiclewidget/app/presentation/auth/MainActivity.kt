@@ -50,6 +50,10 @@ import net.openid.appauth.AuthorizationServiceConfiguration
 import net.openid.appauth.ResponseTypeValues
 import javax.inject.Inject
 
+private fun hasScanPermissions(context: android.content.Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED &&
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+
 object OAuthConfig {
     const val SCOPE = "openid offline_access vehicle_device_data vehicle_cmds"
 
@@ -106,27 +110,23 @@ class MainActivity : ComponentActivity() {
             val context = LocalContext.current
             val coroutineScope = rememberCoroutineScope()
 
-            // BLUETOOTH_SCAN is a dangerous permission on API 31+: declaring it in the manifest
-            // alone never grants it. Without this request VehicleBeaconScanner.startIfPossible()
-            // silently no-ops forever, with no crash or error to signal why -- the widget just
-            // never detects the car.
             val bluetoothPermissionLauncher = rememberLauncherForActivityResult(
-                ActivityResultContracts.RequestPermission(),
-            ) { granted ->
-                if (granted) {
+                ActivityResultContracts.RequestMultiplePermissions(),
+            ) { results ->
+                if (results.values.all { it }) {
                     vehicleBeaconScanner.startIfPossible()
                     VehicleWidgetProvider.requestRefresh(context)
                 }
             }
 
             LaunchedEffect(Unit) {
-                if (ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN)
-                    == PackageManager.PERMISSION_GRANTED
-                ) {
+                if (hasScanPermissions(context)) {
                     vehicleBeaconScanner.startIfPossible()
                     VehicleWidgetProvider.requestRefresh(context)
                 } else {
-                    bluetoothPermissionLauncher.launch(Manifest.permission.BLUETOOTH_SCAN)
+                    bluetoothPermissionLauncher.launch(
+                        arrayOf(Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.ACCESS_FINE_LOCATION),
+                    )
                 }
                 // Covers the case where the app was already authenticated from a previous
                 // session before this launch -- fetchVehicleAndStartScan below covers the
@@ -174,6 +174,7 @@ class MainActivity : ComponentActivity() {
                             BluetoothDebugPanel(
                                 vehicleVinCache = vehicleVinCache,
                                 vehicleFetchError = vehicleFetchError,
+                                vehicleBeaconScanner = vehicleBeaconScanner,
                                 checkConnection = checkBluetoothConnectionUseCase,
                                 onFetchVehicleClick = {
                                     fetchVehicleAndStartScan(coroutineScope, context) { vehicleFetchError = it }
@@ -233,19 +234,22 @@ private fun ConnectScreen(isAuthenticated: Boolean, onConnectClick: () -> Unit) 
 private fun BluetoothDebugPanel(
     vehicleVinCache: VehicleVinCache,
     vehicleFetchError: String?,
+    vehicleBeaconScanner: VehicleBeaconScanner,
     checkConnection: CheckBluetoothConnectionUseCase,
     onFetchVehicleClick: () -> Unit,
     onRestartScanClick: () -> Unit,
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var hasPermission by remember { mutableStateOf(false) }
     var cachedVin by remember { mutableStateOf<String?>(null) }
     var connectionState by remember { mutableStateOf<ConnectionState?>(null) }
     var refreshTick by remember { mutableIntStateOf(0) }
+    var activeScanStatus by remember { mutableStateOf("(not run yet)") }
+    var nearbyNames by remember { mutableStateOf("(not run yet)") }
 
     LaunchedEffect(refreshTick) {
-        hasPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.BLUETOOTH_SCAN) ==
-            PackageManager.PERMISSION_GRANTED
+        hasPermission = hasScanPermissions(context)
         cachedVin = vehicleVinCache.get()
         connectionState = checkConnection()
     }
@@ -260,7 +264,7 @@ private fun BluetoothDebugPanel(
     val vin = cachedVin
     Column(modifier = Modifier.padding(24.dp)) {
         Text("Bluetooth debug", style = MaterialTheme.typography.titleMedium)
-        Text("BLUETOOTH_SCAN permission: " + if (hasPermission) "granted" else "NOT granted")
+        Text("Scan permissions (BLUETOOTH_SCAN + location): " + if (hasPermission) "granted" else "NOT granted")
         Text("Cached VIN: " + (vin ?: "(none yet -- tap Fetch vehicle now below)"))
         Text("Expected BLE beacon name: " + if (vin != null) TeslaBleBeaconName.forVin(vin) else "(unknown, no VIN)")
         Text("Computed state: ${connectionState?.name ?: "checking..."}")
@@ -273,6 +277,34 @@ private fun BluetoothDebugPanel(
         }
         Button(onClick = onRestartScanClick, modifier = Modifier.padding(top = 8.dp)) {
             Text("Restart beacon scan")
+        }
+        Text("Active scan result: $activeScanStatus", modifier = Modifier.padding(top = 8.dp))
+        Button(
+            onClick = {
+                activeScanStatus = "scanning (up to 20s)..."
+                coroutineScope.launch {
+                    activeScanStatus = when (vehicleBeaconScanner.scanOnceActive()) {
+                        VehicleBeaconScanner.ScanOutcome.FOUND -> "found!"
+                        VehicleBeaconScanner.ScanOutcome.NOT_FOUND -> "not found within 20s"
+                        VehicleBeaconScanner.ScanOutcome.CANNOT_SCAN -> "couldn't scan (no permission or no VIN cached)"
+                    }
+                    refreshTick++
+                }
+            },
+        ) {
+            Text("Scan now (active, ~20s)")
+        }
+        Text("Nearby device names: $nearbyNames", modifier = Modifier.padding(top = 8.dp))
+        Button(
+            onClick = {
+                nearbyNames = "scanning (up to 8s)..."
+                coroutineScope.launch {
+                    val names = vehicleBeaconScanner.scanAllNearbyNames()
+                    nearbyNames = if (names.isEmpty()) "(none seen)" else names.joinToString()
+                }
+            },
+        ) {
+            Text("Scan all nearby names (unfiltered, ~8s)")
         }
     }
 }

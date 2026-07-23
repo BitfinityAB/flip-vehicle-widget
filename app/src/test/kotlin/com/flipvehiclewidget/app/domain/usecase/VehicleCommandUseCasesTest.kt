@@ -2,6 +2,7 @@ package com.flipvehiclewidget.app.domain.usecase
 
 import com.flipvehiclewidget.app.domain.entity.CommandResult
 import com.flipvehiclewidget.app.domain.entity.Vehicle
+import com.flipvehiclewidget.app.domain.entity.VehicleStatus
 import com.flipvehiclewidget.app.domain.repository.VehicleRepository
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -12,6 +13,9 @@ private class FakeVehicleRepository : VehicleRepository {
 
     override suspend fun getVehicle(): Result<Vehicle> =
         Result.success(Vehicle(id = 7L, vin = "5YJ3E1EA1PF000001", displayName = "Car"))
+
+    override suspend fun getVehicleStatus(vehicle: Vehicle): Result<VehicleStatus> =
+        Result.success(VehicleStatus(locked = true, climateOn = false, frontTrunkOpen = false, rearTrunkOpen = false))
 
     override suspend fun toggleTrunk(vehicle: Vehicle): Result<CommandResult> {
         lastVehicle = vehicle

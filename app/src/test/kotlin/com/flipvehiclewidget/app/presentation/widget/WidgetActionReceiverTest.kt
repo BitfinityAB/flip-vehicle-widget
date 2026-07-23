@@ -54,7 +54,7 @@ class WidgetActionReceiverTest {
         assertEquals(1, workInfos.size)
 
         val view = shadowManager.getViewFor(appWidgetId)
-        assertEquals(false, view.findViewById<android.widget.Button>(R.id.button_toggle_trunk).isEnabled)
+        assertEquals(false, view.findViewById<android.view.View>(R.id.button_toggle_trunk).isEnabled)
     }
 
     @Test

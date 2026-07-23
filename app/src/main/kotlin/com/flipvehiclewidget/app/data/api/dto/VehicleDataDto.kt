@@ -17,6 +17,9 @@ data class VehicleDataDto(
 @Serializable
 data class VehicleStateDto(
     @SerialName("locked") val locked: Boolean,
+    // Tesla's real field names -- 0 = closed, nonzero = open (partially or fully).
+    @SerialName("ft") val frontTrunkState: Int = 0,
+    @SerialName("rt") val rearTrunkState: Int = 0,
 )
 
 @Serializable

@@ -2,4 +2,7 @@
 <resources>
     <dimen name="widget_padding">8dp</dimen>
     <dimen name="widget_button_text_size">12sp</dimen>
+    <dimen name="widget_tile_margin">4dp</dimen>
+    <dimen name="widget_tile_icon_size">24dp</dimen>
+    <dimen name="widget_connect_tile_size">72dp</dimen>
 </resources>

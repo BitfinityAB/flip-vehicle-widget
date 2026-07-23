@@ -7,6 +7,7 @@ import com.flipvehiclewidget.app.data.api.dto.CommandResponseDto
 import com.flipvehiclewidget.app.data.local.VehicleVinCache
 import com.flipvehiclewidget.app.domain.entity.CommandResult
 import com.flipvehiclewidget.app.domain.entity.Vehicle
+import com.flipvehiclewidget.app.domain.entity.VehicleStatus
 import com.flipvehiclewidget.app.domain.repository.VehicleRepository
 import javax.inject.Inject
 
@@ -24,6 +25,16 @@ class VehicleRepositoryImpl @Inject constructor(
         // scanning.
         vehicleVinCache.save(dto.vin)
         Vehicle(id = dto.id, vin = dto.vin, displayName = dto.displayName)
+    }
+
+    override suspend fun getVehicleStatus(vehicle: Vehicle): Result<VehicleStatus> = runCatching {
+        val data = vehicleApiService.getVehicleData(vehicle.id).response
+        VehicleStatus(
+            locked = data.vehicleState.locked,
+            climateOn = data.climateState.isClimateOn,
+            frontTrunkOpen = data.vehicleState.frontTrunkState != 0,
+            rearTrunkOpen = data.vehicleState.rearTrunkState != 0,
+        )
     }
 
     // toggleTrunk/toggleFrunk/toggleClimate/toggleLocks all send commands through

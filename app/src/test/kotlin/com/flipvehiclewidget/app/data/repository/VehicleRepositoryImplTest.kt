@@ -63,6 +63,23 @@ class VehicleRepositoryImplTest {
     }
 
     @Test
+    fun `getVehicleStatus maps locked, climate, and trunk state -- nonzero trunk fields mean open`() = runTest {
+        coEvery { vehicleApiService.getVehicleData(TEST_VEHICLE.id) } returns VehicleDataResponseDto(
+            VehicleDataDto(
+                vehicleState = VehicleStateDto(locked = false, frontTrunkState = 1, rearTrunkState = 0),
+                climateState = ClimateStateDto(isClimateOn = true),
+            ),
+        )
+
+        val status = repository.getVehicleStatus(TEST_VEHICLE).getOrThrow()
+
+        assertEquals(false, status.locked)
+        assertEquals(true, status.climateOn)
+        assertEquals(true, status.frontTrunkOpen)
+        assertEquals(false, status.rearTrunkOpen)
+    }
+
+    @Test
     fun `toggleTrunk requests rear trunk by VIN and maps result`() = runTest {
         coEvery {
             commandApiService.actuateTrunk(TEST_VEHICLE.vin, ActuateTrunkRequestDto(whichTrunk = "rear"))
